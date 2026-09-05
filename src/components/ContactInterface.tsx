@@ -8,7 +8,7 @@ import { Send, Github, Linkedin, Mail, Play, CheckCircle, Terminal, RefreshCw, C
 export const GITHUB_URL = "https://github.com/placeholder-aasip";     // Replace with actual GitHub link
 export const LINKEDIN_URL = "https://linkedin.com/in/placeholder-aasip"; // Replace with actual LinkedIn link
 export const EMAIL_ADDRESS = "blackff131h@gmail.com";                  // Your email address (prefilled from metadata)
-export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/developer?id=placeholder"; // Replace with actual Google Play dev link
+export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.SeilConnect"; // Replace with actual Google Play dev link
 
 export default function ContactInterface() {
   const [formData, setFormData] = useState({
