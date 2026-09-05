@@ -19,43 +19,68 @@ export default function HeroVideo() {
 
     // Reset states
     setVideoError(false);
-
-    // Forces inline and muted playing (Strictly required for autoplay)
-    video.muted = true;
-    video.defaultMuted = true;
     video.playsInline = true;
     video.loop = true;
 
-    // Immediate state check: If the video is already loaded or cached, readyState will be >= 2 (HAVE_CURRENT_DATA)
+    // Set audio active initially
+    video.muted = false;
+    video.volume = 1.0;
+
+    // Immediate state check: If the video is already loaded or cached
     if (video.readyState >= 2) {
       setVideoLoaded(true);
     }
 
-    // Attempt autoplay programmatically
-    const playVideo = () => {
-      video.play().then(() => {
-        setVideoLoaded(true);
-        setVideoError(false);
-      }).catch((err) => {
-        console.warn("Autoplay was blocked initially. Retrying on user interaction or loaded event.", err);
-      });
-    };
-
-    // Try playing right away
-    playVideo();
-
-    // Setup fallback trigger on window interaction if blocked
+    // Interaction handler to instantly activate the cinematic sound on the user's very first click/tap anywhere on the page
     const handleInteraction = () => {
-      if (video.paused) {
-        video.play().then(() => {
-          setVideoLoaded(true);
-          setVideoError(false);
-        }).catch(() => {});
+      const vid = videoRef.current;
+      if (vid) {
+        vid.muted = false;
+        vid.volume = 1.0;
+        setIsMuted(false);
+        vid.play()
+          .then(() => {
+            setVideoLoaded(true);
+          })
+          .catch((err) => {
+            console.warn("Audio activation delayed on user gesture:", err);
+          });
       }
+      // Remove listeners once sound is active
       window.removeEventListener("click", handleInteraction);
       window.removeEventListener("touchstart", handleInteraction);
     };
 
+    // Attempt unmuted autoplay programmatically
+    const playVideoWithSound = () => {
+      video.play()
+        .then(() => {
+          // Success! Browser allowed unmuted autoplay right away
+          setIsMuted(false);
+          setVideoLoaded(true);
+          // Remove global interaction triggers since sound is already playing
+          window.removeEventListener("click", handleInteraction);
+          window.removeEventListener("touchstart", handleInteraction);
+        })
+        .catch((err) => {
+          console.warn("Unmuted autoplay blocked. Falling back to silent video background:", err);
+          
+          // Force silent playback so the video element is never stuck
+          video.muted = true;
+          setIsMuted(true);
+          video.play()
+            .then(() => {
+              setVideoLoaded(true);
+            })
+            .catch((playErr) => {
+              console.error("Video element failed to play muted:", playErr);
+            });
+        });
+    };
+
+    playVideoWithSound();
+
+    // Register active gesture listeners to trigger unmute on the first interaction
     window.addEventListener("click", handleInteraction);
     window.addEventListener("touchstart", handleInteraction);
 
@@ -71,7 +96,6 @@ export default function HeroVideo() {
   };
 
   const handleError = (e: any) => {
-    // Log any events, but do not clear elements to maintain continuous streams
     console.warn("Video stream status notification:", e);
   };
 
@@ -84,12 +108,10 @@ export default function HeroVideo() {
     video.muted = newMuted;
     setIsMuted(newMuted);
 
-    // Bypasses browser & mobile hardware audio context blocks
     if (!newMuted) {
       video.volume = 1.0;
-      // Re-trigger play on user interaction to force active audio track play consent
       video.play().catch((err) => {
-        console.warn("Audio play gesture request resolved with feedback:", err);
+        console.warn("Audio playback gesture response failed:", err);
       });
     }
   };
@@ -130,7 +152,6 @@ export default function HeroVideo() {
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${getPositionClass()} opacity-100`}
         style={{ zIndex: 5 }}
         autoPlay
-        muted
         loop
         playsInline
         onCanPlay={handleCanPlay}
