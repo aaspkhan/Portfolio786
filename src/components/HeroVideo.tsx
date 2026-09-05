@@ -83,6 +83,15 @@ export default function HeroVideo() {
     const newMuted = !video.muted;
     video.muted = newMuted;
     setIsMuted(newMuted);
+
+    // Bypasses browser & mobile hardware audio context blocks
+    if (!newMuted) {
+      video.volume = 1.0;
+      // Re-trigger play on user interaction to force active audio track play consent
+      video.play().catch((err) => {
+        console.warn("Audio play gesture request resolved with feedback:", err);
+      });
+    }
   };
 
   const cyclePosition = (e: React.MouseEvent) => {
